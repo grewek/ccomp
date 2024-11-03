@@ -1,19 +1,59 @@
 enum AssemblyProgram {
     case Program(definition: AssemblyFunctionDefintion)
+
+    func Display() -> String {
+        switch self {
+
+        case .Program(let definition):
+            return "(Definition(\(definition.Display())))"
+        }
+    }
 }
 
 enum AssemblyFunctionDefintion {
     case FunctionDefinition(name: String, instructions: [AssemblyInstruction])
+
+    func Display() -> String {
+        switch self {
+
+        case .FunctionDefinition(let name, let instructions):
+            var result = "\nname: \(name)\nbody: [\n"
+            for instruction in instructions {
+                result += instruction.Display()
+            }
+            return result
+        }
+    }
 }
 
 enum AssemblyInstruction {
     case Move(dest: AssemblyOperand, src: AssemblyOperand)
     case Ret
+
+    func Display() -> String {
+        switch self {
+
+        case .Move(let dest, let src):
+            return "\tmov \(dest.Display()), \(src.Display())\n"
+        case .Ret:
+            return "\tret\n"
+        }
+    }
 }
 
 enum AssemblyOperand {
     case Immediate(value: Int)
     case Register
+
+    func Display() -> String {
+        switch self {
+
+        case .Immediate(let value):
+            return "\(value)"
+        case .Register:
+            return "eax"
+        }
+    }
 }
 
 struct Generator {
