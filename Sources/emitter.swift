@@ -13,8 +13,8 @@ struct Emitter {
 
     mutating func EmitProgram() {
         //TODO: Encode these in the Ast Assembly generation!
-        self.output += "global main\n"
         self.output += "section .text\n"
+        self.output += "global main\n"
 
         switch self.repr {
         case .Program(let definition):
