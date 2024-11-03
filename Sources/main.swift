@@ -40,8 +40,14 @@ if CommandLine.arguments.count == 3 {
         let repr = result.Display()
         print("\(repr)")
     } else if CommandLine.arguments[1] == "--codegen" {
-        let filename = CommandLine.arguments[2]
-        print(filename)
+        let filepath = CommandLine.arguments[2]
+        let source = try String(contentsOfFile: filepath, encoding: String.Encoding.ascii)
+
+        var parser = Parser(tokenizer: Lexer(source: source, currentPosition: 0))
+        let result = parser.ParseProgram()
+        let codeGenerator = Generator(ast: result)
+
+        print(codeGenerator.GenerateAssembly().Display())
     } else {
         print("Usage: ccomp <FLAGS> <sourcefile>")
     }
