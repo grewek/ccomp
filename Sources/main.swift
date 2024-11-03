@@ -48,6 +48,8 @@ if CommandLine.arguments.count == 3 {
         let codeGenerator = Generator(ast: result)
 
         print(codeGenerator.GenerateAssembly().Display())
+        var myTestEmitter = Emitter(assembly: codeGenerator.GenerateAssembly(), path: "./test.txt")
+        myTestEmitter.EmitProgram()
     } else {
         print("Usage: ccomp <FLAGS> <sourcefile>")
     }
