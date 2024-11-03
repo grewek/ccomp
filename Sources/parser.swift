@@ -50,7 +50,6 @@ struct Parser {
         let current = try? tokenizer.next()
 
         if current?.tokenType == tokenOfType {
-            print(current!.tokenRepr)
             return true
         }
 
@@ -68,7 +67,6 @@ struct Parser {
     mutating func ParseIdentifier() -> String {
         let current = try? tokenizer.next()
         if current?.tokenType == TokenType.Identifier {
-            print(current!.tokenRepr)
             return String(current!.tokenRepr)
         }
 
