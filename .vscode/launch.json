@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ccomp}",
+            "name": "Debug ccomp",
+            "program": "${workspaceFolder:ccomp}/.build/debug/ccomp",
+            "preLaunchTask": "swift: Build Debug ccomp"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ccomp}",
+            "name": "Release ccomp",
+            "program": "${workspaceFolder:ccomp}/.build/release/ccomp",
+            "preLaunchTask": "swift: Build Release ccomp"
+        }
+    ]
+}
