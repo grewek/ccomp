@@ -16,7 +16,7 @@ enum AstFunctionDefinition {
         switch self {
 
         case .Function(let identifier, let statement):
-            return "\n\tname = \(identifier)\n\tbody=\(statement.Display())\n"
+            return "Function(\n\tname = \(identifier)\n\tbody=\(statement.Display())\n)"
         }
     }
 }
@@ -32,13 +32,33 @@ enum AstStatement {
     }
 }
 
-enum AstExpression {
+indirect enum AstExpression {
     case Constant(value: Int)
+    case Unary(unaryOperator: AstUnaryOperator, expression: AstExpression)
 
     func Display() -> String {
         switch self {
         case .Constant(let value):
             return "\n\t\tConstant(\(value))"
+        case .Unary(let unaryOperator, let expression):
+            return
+                "\n\t\tUnary(Operator = \(unaryOperator.Display())\n\t\tExpression = \(expression.Display()))"
+        }
+
+    }
+}
+
+enum AstUnaryOperator {
+    case Complement
+    case Negate
+
+    func Display() -> String {
+        switch self {
+
+        case .Complement:
+            return "Complement"
+        case .Negate:
+            return "Negate"
         }
     }
 }
@@ -100,12 +120,35 @@ struct Parser {
         return AstStatement.Return(expression: expression)
     }
 
+    func ParseUnaryOperation(token: Token?) -> AstUnaryOperator {
+
+        if token?.tokenType == TokenType.Negation {
+            return AstUnaryOperator.Negate
+        } else if token?.tokenType == TokenType.Complement {
+            print("Parsed a complement operator")
+            return AstUnaryOperator.Complement
+        }
+
+        fatalError("Error: Expected a Unary Operator but found \(token!.tokenType)")
+    }
+
     mutating func ParseExpression() -> AstExpression {
         let value = try? tokenizer.next()
 
         if value?.tokenType == TokenType.Constant {
             let value = Int(value!.tokenRepr)
             return AstExpression.Constant(value: value!)
+        } else if value?.tokenType == TokenType.Negation || value?.tokenType == TokenType.Complement
+        {
+            let op = ParseUnaryOperation(token: value)
+            let expression = ParseExpression()
+            return AstExpression.Unary(unaryOperator: op, expression: expression)
+
+        } else if value?.tokenType == TokenType.OpenParen {
+            let innerExpression = ParseExpression()
+            _ = Expect(tokenOfType: TokenType.ClosedParen)
+            return innerExpression
+
         } else {
             /*TODO: ERROR*/
         }
