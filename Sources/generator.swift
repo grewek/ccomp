@@ -98,6 +98,8 @@ struct Generator {
 
         case .Constant(let value):
             return value
+        case .Unary(let unaryOperator, let expression):
+            return 0 /*TODO  This is nonsensical and will hurt us!*/
         }
     }
 }
