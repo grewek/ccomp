@@ -27,6 +27,9 @@ enum TokenType {
     case ClosedParen
     case ForwardSlash
     case Semicolon
+    case Negation
+    case Decrement
+    case Complement
 
 }
 
@@ -193,6 +196,22 @@ struct Lexer {
             let token = source[pos...pos]
             currentPosition += 1
             return Token(tokenType: TokenType.ClosedParen, tokenRepr: token)
+        case "-":
+            let token = source[pos...pos]
+            let nextCharacter = try? PeekCharacter()
+            if nextCharacter == "-" {
+                currentPosition += 2
+                let endPos = String.Index.init(utf16Offset: currentPosition, in: source)
+                let token = source[pos...endPos]
+                return Token(tokenType: TokenType.Decrement, tokenRepr: token)
+            } else {
+                currentPosition += 1
+                return Token(tokenType: TokenType.Negation, tokenRepr: token)
+            }
+        case "~":
+            let token = source[pos...pos]
+            currentPosition += 1
+            return Token(tokenType: TokenType.Complement, tokenRepr: token)
         case "/":
             let token = source[pos...pos]
             currentPosition += 1
