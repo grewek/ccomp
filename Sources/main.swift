@@ -39,6 +39,17 @@ if CommandLine.arguments.count == 3 {
         let result = parser.ParseProgram()
         let repr = result.Display()
         print("\(repr)")
+    } else if CommandLine.arguments[1] == "--tacky" {
+        let filepath = CommandLine.arguments[2]
+        let source = try String(contentsOfFile: filepath, encoding: String.Encoding.ascii)
+
+        var parser = Parser(tokenizer: Lexer(source: source, currentPosition: 0))
+        let result = parser.ParseProgram()
+        var tacky = TackyGenerator(ast: result)
+        let tackyResult = tacky.EmitTackyProgram(programDefinition: result)
+
+        print("\(tackyResult.Display())")
+
     } else if CommandLine.arguments[1] == "--codegen" {
         let filepath = CommandLine.arguments[2]
         let source = try String(contentsOfFile: filepath, encoding: String.Encoding.ascii)
