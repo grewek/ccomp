@@ -125,7 +125,6 @@ struct Parser {
         if token?.tokenType == TokenType.Negation {
             return AstUnaryOperator.Negate
         } else if token?.tokenType == TokenType.Complement {
-            print("Parsed a complement operator")
             return AstUnaryOperator.Complement
         }
 
