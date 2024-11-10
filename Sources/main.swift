@@ -56,7 +56,9 @@ if CommandLine.arguments.count == 3 {
 
         var parser = Parser(tokenizer: Lexer(source: source, currentPosition: 0))
         let result = parser.ParseProgram()
-        let codeGenerator = Generator(ast: result)
+        var tacky = TackyGenerator(ast: result)
+        let tackyResult = tacky.EmitTackyProgram(programDefinition: result)
+        var codeGenerator = Generator(ast: tackyResult)
 
         print(codeGenerator.GenerateAssembly().Display())
         var myTestEmitter = Emitter(assembly: codeGenerator.GenerateAssembly(), path: "./test.txt")
