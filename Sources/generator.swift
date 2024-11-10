@@ -28,45 +28,145 @@ enum AssemblyFunctionDefintion {
 
 enum AssemblyInstruction {
     case Move(dest: AssemblyOperand, src: AssemblyOperand)
+    //TODO: case AllocateStack(value: Int)
+    case Unary(operator: AssemblyUnaryOperator, operand: AssemblyOperand)
     case Ret
 
     func Display() -> String {
         switch self {
 
         case .Move(let dest, let src):
-            return "\tmov \(dest.Display()), \(src.Display())\n"
+            return "\tMove(\(dest.Display()), \(src.Display()))\n"
+        case .Unary(let op, let operand):
+            return "\tUnary(\(op.Display()),\(operand.Display()))\n"
         case .Ret:
-            return "\tret\n"
+            return "\tReturn\n"
         }
     }
 }
 
-enum AssemblyOperand {
-    case Immediate(value: Int)
-    case Register
+enum AssemblyUnaryOperator {
+    case Neg
+    case Not
 
     func Display() -> String {
         switch self {
+        case .Neg:
+            return "neg"
+        case .Not:
+            return "not"
+        }
+    }
+}
+enum AssemblyOperand {
+    case Immediate(value: Int)
+    case Register(register: AssemblyRegister)
+    case Pseudo(identifier: String)
+    case Stack(value: Int)
 
+    func Display() -> String {
+        switch self {
         case .Immediate(let value):
-            return "\(value)"
-        case .Register:
+            return "Imm(\(value))"
+        case .Register(let register):
+            return "Reg(\(register.Display())"
+        case .Pseudo(let identifier):
+            return "Pseudo(\(identifier))"
+        case .Stack(let value):
+            return "Stack(\(value))"
+        }
+    }
+}
+
+enum AssemblyRegister {
+    case Ax
+    case R10
+
+    func Display() -> String {
+        switch self {
+        case .Ax:
             return "eax"
+        case .R10:
+            return "r10d"
         }
     }
 }
 
 struct Generator {
-    var ast: AstProgram
+    var ast: AstTackyProgram
+    var stackWaterMark: Int = -4
+    var localPseudoRegisters: [String: Int] = [:]
 
-    func GenerateAssembly() -> AssemblyProgram {
+    mutating func GenerateAssembly() -> AssemblyProgram {
+        var firstPass: AssemblyProgram
         switch self.ast {
         case .Program(let function):
-            return AssemblyProgram.Program(definition: GenerateFunction(function))
+            firstPass = AssemblyProgram.Program(definition: GenerateFunction(function))
         }
+
+        return AssemblyProgram.Program(
+            definition: ReplaceInstructionsWithPseudoValues(repr: &firstPass))
+
     }
 
-    func GenerateFunction(_ definition: AstFunctionDefinition) -> AssemblyFunctionDefintion {
+    mutating func ReplaceInstructionsWithPseudoValues(repr: inout AssemblyProgram)
+        -> AssemblyFunctionDefintion
+    {
+        var newName = ""
+        var result: [AssemblyInstruction] = []
+        switch repr {
+        case .Program(let definition):
+            switch definition {
+            case .FunctionDefinition(let name, let instructions):
+                newName = name
+                for instruction in instructions {
+                    //TODO: It seems that we cannot replace values directly inside the array :(
+                    //      so we need to either use something like insert or rethink the way
+                    //      we want to do it?
+                    result.append(ReplacePseudo(instruction: instruction))
+                }
+                break
+            }
+        }
+
+        return AssemblyFunctionDefintion.FunctionDefinition(name: newName, instructions: result)
+    }
+
+    mutating func InsertPseudoRegister(name: String) -> Int {
+        if self.localPseudoRegisters[name] == nil {
+            let waterMark = stackWaterMark
+            stackWaterMark -= 4
+
+            self.localPseudoRegisters[name] = waterMark
+        }
+
+        return self.localPseudoRegisters[name]!
+    }
+
+    mutating func ReplacePseudo(instruction: AssemblyInstruction) -> AssemblyInstruction {
+        switch instruction {
+        case .Move(AssemblyOperand.Pseudo(let pseudoRegName), let src):
+            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            return AssemblyInstruction.Move(
+                dest: AssemblyOperand.Stack(value: waterMark),
+                src: src)
+        case .Move(let dest, AssemblyOperand.Pseudo(let pseudoRegName)):
+            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            return AssemblyInstruction.Move(
+                dest: dest,
+                src: AssemblyOperand.Stack(value: waterMark))
+        case .Unary(operator: let op, operand: AssemblyOperand.Pseudo(let pseudoRegName)):
+            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            return AssemblyInstruction.Unary(
+                operator: op, operand: AssemblyOperand.Stack(value: waterMark))
+        default:
+            break
+        }
+
+        return instruction
+    }
+
+    func GenerateFunction(_ definition: AstTackyFunction) -> AssemblyFunctionDefintion {
         switch definition {
 
         case .Function(let identifier, let statement):
@@ -75,31 +175,64 @@ struct Generator {
         }
     }
 
-    func GenerateInstructions(_ statement: AstStatement) -> [AssemblyInstruction] {
+    func GenerateInstructions(_ statements: [AstTackyInstruction]) -> [AssemblyInstruction] {
         var result: [AssemblyInstruction] = []
 
-        switch statement {
-
-        case .Return(let expression):
-            let returnValue = ConstantValue(expression)
-            result.append(
-                AssemblyInstruction.Move(
-                    dest: AssemblyOperand.Register,
-                    src: AssemblyOperand.Immediate(value: returnValue)))
-            result.append(AssemblyInstruction.Ret)
-            break
+        for statement in statements {
+            switch statement {
+            case .Return(let expression):
+                let returnValue = ConstantValue(expression)
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: AssemblyOperand.Register(register: AssemblyRegister.Ax),
+                        src: AssemblyOperand.Immediate(value: returnValue)))
+                result.append(AssemblyInstruction.Ret)
+                break
+            case .Unary(let op, let dest, let src):
+                let convertedOperator = GenerateAssemblyOperator(operand: op)
+                let destOperand = GenerateAssemblyOperand(operand: dest)
+                let srcOperand = GenerateAssemblyOperand(operand: src)
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: destOperand,
+                        src: srcOperand))
+                result.append(
+                    AssemblyInstruction.Unary(operator: convertedOperator, operand: destOperand))
+                break
+            }
         }
 
         return result
     }
 
-    func ConstantValue(_ expression: AstExpression) -> Int {
+    func GenerateAssemblyOperand(operand: AstTackyValue) -> AssemblyOperand {
+        switch operand {
+        case .Constant(let value):
+            return AssemblyOperand.Immediate(value: value)
+        case .Var(let identifier):
+            return AssemblyOperand.Pseudo(identifier: identifier)
+        }
+    }
+
+    func GenerateAssemblyOperator(operand: AstTackyUnaryOperator) -> AssemblyUnaryOperator {
+        switch operand {
+        case .Complement:
+            return .Not
+        case .Negate:
+            return .Neg
+        }
+    }
+
+    //TODO: Is this still a necessary function? Can we delete it?
+    func ConstantValue(_ expression: AstTackyValue) -> Int {
         switch expression {
 
         case .Constant(let value):
             return value
-        case .Unary(let unaryOperator, let expression):
-            return 0 /*TODO  This is nonsensical and will hurt us!*/
+
+        case .Var(_):
+            //TODO: This is a standin value to make the error go away for now!
+            return 1
         }
     }
 }
