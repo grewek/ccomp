@@ -46,6 +46,8 @@ struct Emitter {
         case .Move(let dest, let src):
             let moveInstruction = "\tmov \(dest.Display()), \(src.Display())\n"
             output += moveInstruction
+        case .Unary(let op, let dest):
+            break
         case .Ret:
             let retInstruction = "\tret\n"
             output += retInstruction
