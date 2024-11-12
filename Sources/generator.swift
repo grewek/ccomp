@@ -128,15 +128,23 @@ struct Generator {
             case .FunctionDefinition(let name, let instructions):
                 newName = name
                 for instruction in instructions {
-                    //TODO: It seems that we cannot replace values directly inside the array :(
-                    //      so we need to either use something like insert or rethink the way
-                    //      we want to do it?
-                    result.append(ReplacePseudo(instruction: instruction))
+                    //TODO: Can we mutate in place instead of generating a new list?
+                    let generatedInstruction = ReplacePseudo(instruction: instruction)
+
+                    switch generatedInstruction {
+                    case .Move(AssemblyOperand.Stack(let src), AssemblyOperand.Stack(let dest)):
+                        let generatedInstructions = RewriteIllegalStackInstruction(
+                            srcValue: src, destValue: dest)
+                        result.append(contentsOf: generatedInstructions)
+                    default:
+                        result.append(generatedInstruction)
+                    }
                 }
-                break
+
+                result.insert(
+                    AssemblyInstruction.AllocateStack(size: GetLocalStackSize()), at: 0)
             }
         }
-
         return AssemblyFunctionDefintion.FunctionDefinition(name: newName, instructions: result)
     }
 
