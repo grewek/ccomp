@@ -153,6 +153,13 @@ struct Generator {
 
     mutating func ReplacePseudo(instruction: AssemblyInstruction) -> AssemblyInstruction {
         switch instruction {
+        case .Move(
+            AssemblyOperand.Pseudo(let pseudoDestName), AssemblyOperand.Pseudo(let pseudoSrcName)):
+            let waterMarkDest = InsertPseudoRegister(name: pseudoDestName)
+            let waterMarkSrc = InsertPseudoRegister(name: pseudoSrcName)
+            return AssemblyInstruction.Move(
+                dest: AssemblyOperand.Stack(value: waterMarkDest),
+                src: AssemblyOperand.Stack(value: waterMarkSrc))
         case .Move(AssemblyOperand.Pseudo(let pseudoRegName), let src):
             let waterMark = InsertPseudoRegister(name: pseudoRegName)
             return AssemblyInstruction.Move(
