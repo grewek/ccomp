@@ -140,6 +140,17 @@ struct Generator {
         return AssemblyFunctionDefintion.FunctionDefinition(name: newName, instructions: result)
     }
 
+    func RewriteIllegalStackInstruction(srcValue: Int, destValue: Int) -> [AssemblyInstruction] {
+        [
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R10),
+                src: AssemblyOperand.Stack(value: srcValue)),
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Stack(value: destValue),
+                src: AssemblyOperand.Register(register: AssemblyRegister.R10)),
+        ]
+    }
+
     mutating func InsertPseudoRegister(name: String) -> Int {
         if self.localPseudoRegisters[name] == nil {
             let waterMark = stackWaterMark
