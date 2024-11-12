@@ -163,6 +163,10 @@ struct Generator {
             return AssemblyInstruction.Move(
                 dest: dest,
                 src: AssemblyOperand.Stack(value: waterMark))
+        case .AllocateStack(_):
+            fatalError(
+                "ERROR: AllocateStack is not possible yet as we don't know the absolute stack size yet!"
+            )
         case .Unary(operator: let op, operand: AssemblyOperand.Pseudo(let pseudoRegName)):
             let waterMark = InsertPseudoRegister(name: pseudoRegName)
             return AssemblyInstruction.Unary(
