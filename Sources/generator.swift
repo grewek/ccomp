@@ -109,6 +109,14 @@ struct Generator {
 
     }
 
+    func GetLocalStackSize() -> Int {
+        //NOTE: We convert the stack size back into a positive value as we
+        //need to generate a positive value in the emitted subtraction
+        //if it would be negative at this point the stack would shrink not grow
+        //which is definitly not what we want!
+        let stackSize = abs(self.stackWaterMark + 4)
+        return stackSize
+    }
     mutating func ReplaceInstructionsWithPseudoValues(repr: inout AssemblyProgram)
         -> AssemblyFunctionDefintion
     {
