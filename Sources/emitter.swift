@@ -28,6 +28,11 @@ struct Emitter {
             to: outputTarget, atomically: true, encoding: String.Encoding.utf8)
     }
 
+    func EmitAssemblyLabel(name: String) -> String {
+        let nameLabel = "\(name):\n"
+        return nameLabel
+    }
+
     mutating func EmitFunctionDefinition(definition: AssemblyFunctionDefintion) {
         switch definition {
         case .FunctionDefinition(let name, let instructions):
