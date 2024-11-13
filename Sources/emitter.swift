@@ -84,6 +84,20 @@ struct Emitter {
         }
     }
 
+    func EmitOperand(operand: AssemblyOperand) -> String {
+        switch operand {
+        case .Immediate(let value):
+            return "\(value)"
+        case .Register(let register):
+            return EmitRegister(register: register)
+        case .Pseudo(_):
+            fatalError("Found a pseudo register at emission phase")
+            break
+        case .Stack(let stack):
+            return EmitStackPosition(position: stack)
+
+        }
+    }
     mutating func EmitAssemblyInstructions(instruction: AssemblyInstruction) {
         switch instruction {
 
