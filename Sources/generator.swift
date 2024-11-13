@@ -30,6 +30,7 @@ enum AssemblyInstruction {
     case Move(dest: AssemblyOperand, src: AssemblyOperand)
     //TODO: case AllocateStack(value: Int)
     case Unary(operator: AssemblyUnaryOperator, operand: AssemblyOperand)
+    case AllocateStack(size: Int)
     case Ret
 
     func Display() -> String {
@@ -39,6 +40,8 @@ enum AssemblyInstruction {
             return "\tMove(\(dest.Display()), \(src.Display()))\n"
         case .Unary(let op, let operand):
             return "\tUnary(\(op.Display()),\(operand.Display()))\n"
+        case .AllocateStack(let size):
+            return "\tStackSize(\(size))\n"
         case .Ret:
             return "\tReturn\n"
         }
