@@ -43,6 +43,10 @@ struct Emitter {
         return frameExit
     }
 
+    func EmitStackFrameSize(size: Int) -> String {
+        let frameSize = "\tsub rsp, \(size)\n"
+        return frameSize
+    }
     mutating func EmitFunctionDefinition(definition: AssemblyFunctionDefintion) {
         switch definition {
         case .FunctionDefinition(let name, let instructions):
