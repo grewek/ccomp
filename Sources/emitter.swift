@@ -66,6 +66,15 @@ struct Emitter {
         return "dword [rbp - \(abs(position))]"
     }
 
+    func EmitRegister(register: AssemblyRegister) -> String {
+        switch register {
+        case .Ax:
+            return "eax"
+        case .R10:
+            return "r10d"
+        }
+    }
+
     mutating func EmitAssemblyInstructions(instruction: AssemblyInstruction) {
         switch instruction {
 
