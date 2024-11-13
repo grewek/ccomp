@@ -33,6 +33,11 @@ struct Emitter {
         return nameLabel
     }
 
+    func EmitStackFrameEntry() -> String {
+        let frameEntry = "\tpush rbp\n\tmov rbp, rsp\n"
+        return frameEntry
+    }
+
     mutating func EmitFunctionDefinition(definition: AssemblyFunctionDefintion) {
         switch definition {
         case .FunctionDefinition(let name, let instructions):
