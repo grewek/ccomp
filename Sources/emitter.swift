@@ -50,8 +50,9 @@ struct Emitter {
     mutating func EmitFunctionDefinition(definition: AssemblyFunctionDefintion) {
         switch definition {
         case .FunctionDefinition(let name, let instructions):
-            let nameLabel = "\(name):\n"
-            output += nameLabel
+            output += EmitAssemblyLabel(name: name)
+            output += EmitStackFrameEntry()
+
             for instruction in instructions {
                 EmitAssemblyInstructions(instruction: instruction)
             }
