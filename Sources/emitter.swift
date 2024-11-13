@@ -75,6 +75,15 @@ struct Emitter {
         }
     }
 
+    func EmitUnaryOperation(op: AssemblyUnaryOperator, operand: AssemblyOperand) -> String {
+        switch op {
+        case .Neg:
+            return "\tneg \(EmitOperand(operand: operand))\n"
+        case .Not:
+            return "\tnot \(EmitOperand(operand: operand))\n"
+        }
+    }
+
     mutating func EmitAssemblyInstructions(instruction: AssemblyInstruction) {
         switch instruction {
 
