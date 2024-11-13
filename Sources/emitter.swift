@@ -38,6 +38,11 @@ struct Emitter {
         return frameEntry
     }
 
+    func EmitStackFrameExit() -> String {
+        let frameExit = "\tmov rbp, rsp\n\tpop rbp\n"
+        return frameExit
+    }
+
     mutating func EmitFunctionDefinition(definition: AssemblyFunctionDefintion) {
         switch definition {
         case .FunctionDefinition(let name, let instructions):
