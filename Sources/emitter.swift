@@ -98,11 +98,13 @@ struct Emitter {
 
         }
     }
+
     mutating func EmitAssemblyInstructions(instruction: AssemblyInstruction) {
         switch instruction {
 
         case .Move(let dest, let src):
-            let moveInstruction = "\tmov \(dest.Display()), \(src.Display())\n"
+            let moveInstruction =
+                "\tmov \(EmitOperand(operand: dest)), \(EmitOperand(operand: src))\n"
             output += moveInstruction
         case .Unary(let op, let dest):
             //TODO: Fill this out!
