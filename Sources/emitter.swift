@@ -60,6 +60,12 @@ struct Emitter {
         }
     }
 
+    func EmitStackPosition(position: Int) -> String {
+        //TODO: We either keep the position in negative and do an abs everywhere
+        //or we store the value as a positive value...which sounds more sane
+        return "dword [rbp - \(abs(position))]"
+    }
+
     mutating func EmitAssemblyInstructions(instruction: AssemblyInstruction) {
         switch instruction {
 
