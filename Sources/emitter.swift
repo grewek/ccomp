@@ -110,7 +110,7 @@ struct Emitter {
             //TODO: Fill this out!
             output += EmitUnaryOperation(op: op, operand: dest)
             break
-        case .AllocateStack(_):
+        case .AllocateStack(let size):
             //TODO: Fill this out!
             output += EmitStackFrameSize(size: size)
             break
