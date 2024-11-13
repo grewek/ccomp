@@ -108,11 +108,14 @@ struct Emitter {
             output += moveInstruction
         case .Unary(let op, let dest):
             //TODO: Fill this out!
+            output += EmitUnaryOperation(op: op, operand: dest)
             break
         case .AllocateStack(_):
             //TODO: Fill this out!
+            output += EmitStackFrameSize(size: size)
             break
         case .Ret:
+            output += EmitStackFrameExit()
             let retInstruction = "\tret\n"
             output += retInstruction
         }
