@@ -135,7 +135,7 @@ struct Generator {
                     let generatedInstruction = ReplacePseudo(instruction: instruction)
 
                     switch generatedInstruction {
-                    case .Move(AssemblyOperand.Stack(let src), AssemblyOperand.Stack(let dest)):
+                    case .Move(AssemblyOperand.Stack(let dest), AssemblyOperand.Stack(let src)):
                         let generatedInstructions = RewriteIllegalStackInstruction(
                             srcValue: src, destValue: dest)
                         result.append(contentsOf: generatedInstructions)
