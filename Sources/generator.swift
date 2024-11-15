@@ -221,12 +221,18 @@ struct Generator {
 
         for statement in statements {
             switch statement {
-            case .Return(let expression):
-                let returnValue = ConstantValue(expression)
+            case .Return(AstTackyValue.Constant(let value)):
                 result.append(
                     AssemblyInstruction.Move(
                         dest: AssemblyOperand.Register(register: AssemblyRegister.Ax),
-                        src: AssemblyOperand.Immediate(value: returnValue)))
+                        src: AssemblyOperand.Immediate(value: value)))
+                result.append(AssemblyInstruction.Ret)
+                break
+            case .Return(AstTackyValue.Var(let identifier)):
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: AssemblyOperand.Register(register: AssemblyRegister.Ax),
+                        src: AssemblyOperand.Pseudo(identifier: identifier)))
                 result.append(AssemblyInstruction.Ret)
                 break
             case .Unary(let op, let dest, let src):
