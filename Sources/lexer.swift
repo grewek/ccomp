@@ -30,6 +30,9 @@ enum TokenType {
     case Negation
     case Decrement
     case Complement
+    case Plus
+    case Asterisk
+    case Percent
 
 }
 
@@ -196,6 +199,10 @@ struct Lexer {
             let token = source[pos...pos]
             currentPosition += 1
             return Token(tokenType: TokenType.ClosedParen, tokenRepr: token)
+        case "+":
+            let token = source[pos...pos]
+            currentPosition += 1
+            return Token(tokenType: TokenType.Plus, tokenRepr: token)
         case "-":
             let token = source[pos...pos]
             let nextCharacter = try? PeekCharacter()
@@ -208,6 +215,14 @@ struct Lexer {
                 currentPosition += 1
                 return Token(tokenType: TokenType.Negation, tokenRepr: token)
             }
+        case "*":
+            let token = source[pos...pos]
+            currentPosition += 1
+            return Token(tokenType: TokenType.Asterisk, tokenRepr: token)
+        case "%":
+            let token = source[pos...pos]
+            currentPosition += 1
+            return Token(tokenType: TokenType.Percent, tokenRepr: token)
         case "~":
             let token = source[pos...pos]
             currentPosition += 1
@@ -253,6 +268,8 @@ struct Lexer {
                     } else if nextChar == "/" {
                         currentPosition += 2
                         ConsumeComment()
+                    } else {
+                        return GenerateSymbolToken()
                     }
                 default:
                     return GenerateSymbolToken()
