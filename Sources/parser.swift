@@ -35,6 +35,7 @@ enum AstStatement {
 indirect enum AstExpression {
     case Constant(value: Int)
     case Unary(unaryOperator: AstUnaryOperator, expression: AstExpression)
+    case Binary(binaryOperator: BinaryOperator, left: AstExpression, right: AstExpression)
 
     func Display() -> String {
         switch self {
@@ -43,8 +44,34 @@ indirect enum AstExpression {
         case .Unary(let unaryOperator, let expression):
             return
                 "\n\t\tUnary(Operator = \(unaryOperator.Display())\n\t\tExpression = \(expression.Display()))"
+        case .Binary(let op, let left, let right):
+            return
+                "\n\tBinary (Operator = \(op.Display()), \n\tleft = \(left.Display()), \n\tright = \(right.Display()))"
         }
 
+    }
+}
+
+enum BinaryOperator {
+    case Add
+    case Subtract
+    case Multiply
+    case Divide
+    case Remainder
+
+    func Display() -> String {
+        switch self {
+        case .Add:
+            return "+"
+        case .Subtract:
+            return "-"
+        case .Multiply:
+            return "*"
+        case .Divide:
+            return "/"
+        case .Remainder:
+            return "%"
+        }
     }
 }
 
@@ -65,15 +92,27 @@ enum AstUnaryOperator {
 
 struct Parser {
     var tokenizer: Lexer
+    var currentToken: Token?
+
+    init(tokenizer: Lexer) {
+        self.tokenizer = tokenizer
+
+        //TODO: Handle the actual error !
+        currentToken = try? self.tokenizer.next()
+        print("Parser Initialized the current token is now \(currentToken!)")
+    }
+
+    mutating func Advance() {
+        currentToken = try? tokenizer.next()
+    }
 
     mutating func Expect(tokenOfType: TokenType) -> Bool {
-        let current = try? tokenizer.next()
-
-        if current?.tokenType == tokenOfType {
+        if currentToken?.tokenType == tokenOfType {
+            Advance()
             return true
         }
 
-        fatalError("ERROR: Expected \(tokenOfType) but found \(current!.tokenType)")
+        fatalError("ERROR: Expected \(tokenOfType) but found \(currentToken!.tokenType)")
     }
 
     mutating func ParseProgram() -> AstProgram {
@@ -85,12 +124,13 @@ struct Parser {
     }
 
     mutating func ParseIdentifier() -> String {
-        let current = try? tokenizer.next()
-        if current?.tokenType == TokenType.Identifier {
-            return String(current!.tokenRepr)
+        if currentToken?.tokenType == TokenType.Identifier {
+            let identifier = String(currentToken!.tokenRepr)
+            Advance()
+            return identifier
         }
 
-        fatalError("ERROR: Expected \(TokenType.Identifier) but found \(current!.tokenType)")
+        fatalError("ERROR: Expected \(TokenType.Identifier) but found \(currentToken!.tokenType)")
     }
 
     mutating func ParseFunction() -> AstFunctionDefinition {
@@ -114,44 +154,116 @@ struct Parser {
     }
     mutating func ParseStatement() -> AstStatement {
         _ = Expect(tokenOfType: TokenType.KW_Return)
-        let expression = ParseExpression()
+        //NOTE: We start parsing with zero
+        let expression = ParseExpression(minPrecedence: 0)
         _ = Expect(tokenOfType: TokenType.Semicolon)
 
         return AstStatement.Return(expression: expression)
     }
 
-    func ParseUnaryOperation(token: Token?) -> AstUnaryOperator {
+    func ParseUnaryOperation() -> AstUnaryOperator {
 
-        if token?.tokenType == TokenType.Negation {
+        if currentToken?.tokenType == TokenType.Negation {
             return AstUnaryOperator.Negate
-        } else if token?.tokenType == TokenType.Complement {
+        } else if currentToken?.tokenType == TokenType.Complement {
             return AstUnaryOperator.Complement
         }
 
-        fatalError("Error: Expected a Unary Operator but found \(token!.tokenType)")
+        fatalError("Error: Expected a Unary Operator but found \(currentToken!.tokenType)")
     }
 
-    mutating func ParseExpression() -> AstExpression {
-        let value = try? tokenizer.next()
-
-        if value?.tokenType == TokenType.Constant {
-            let value = Int(value!.tokenRepr)
-            return AstExpression.Constant(value: value!)
-        } else if value?.tokenType == TokenType.Negation || value?.tokenType == TokenType.Complement
-        {
-            let op = ParseUnaryOperation(token: value)
-            let expression = ParseExpression()
-            return AstExpression.Unary(unaryOperator: op, expression: expression)
-
-        } else if value?.tokenType == TokenType.OpenParen {
-            let innerExpression = ParseExpression()
-            _ = Expect(tokenOfType: TokenType.ClosedParen)
-            return innerExpression
-
-        } else {
-            /*TODO: ERROR*/
+    mutating func ParseBinaryOperator() -> BinaryOperator {
+        if currentToken?.tokenType == TokenType.Plus {
+            return BinaryOperator.Add
+        } else if currentToken?.tokenType == TokenType.Negation {
+            return BinaryOperator.Subtract
+        } else if currentToken?.tokenType == TokenType.ForwardSlash {
+            return BinaryOperator.Divide
+        } else if currentToken?.tokenType == TokenType.Asterisk {
+            return BinaryOperator.Multiply
+        } else if currentToken?.tokenType == TokenType.Percent {
+            return BinaryOperator.Remainder
         }
 
-        fatalError("ERROR: Expected Numeric value but got \(value!.tokenType)")
+        fatalError("ERROR: Unknown Binary Operation cannot proceed with Parsing")
+
+    }
+
+    mutating func ParseFactor(minPrecedence: UInt) -> AstExpression {
+        if currentToken?.tokenType == TokenType.Constant {
+            let value = Int(currentToken!.tokenRepr)
+            Advance()
+            return AstExpression.Constant(value: value!)
+        } else if currentToken?.tokenType == TokenType.Negation
+            || currentToken?.tokenType == TokenType.Complement
+        {
+            let op = ParseUnaryOperation()
+            Advance()
+            let expression = ParseFactor(minPrecedence: 0)
+            return AstExpression.Unary(unaryOperator: op, expression: expression)
+
+        } else if currentToken?.tokenType == TokenType.OpenParen {
+            Advance()
+            let innerExpression = ParseExpression(minPrecedence: 0)
+            _ = Expect(tokenOfType: TokenType.ClosedParen)
+            print("Finished Term Next Symbol is \(currentToken!)")
+            return innerExpression
+
+        }
+
+        fatalError("ERROR: Unknown Factor in Expression \(currentToken!)")
+    }
+
+    func IsBinaryOperator() -> Bool {
+        let tokenType = currentToken?.tokenType
+
+        return tokenType == TokenType.Negation || tokenType == TokenType.Plus
+            || tokenType == TokenType.ForwardSlash || tokenType == TokenType.Asterisk
+            || tokenType == TokenType.Percent
+    }
+
+    func OperatorPrecedence() -> UInt {
+        let tokenType = currentToken?.tokenType
+
+        if tokenType == TokenType.Negation || tokenType == TokenType.Plus {
+            return 45
+        } else if tokenType == TokenType.ForwardSlash || tokenType == TokenType.Asterisk
+            || tokenType == TokenType.Percent
+        {
+            return 50
+        }
+
+        fatalError("Expected Operator but found \(tokenType!)")
+    }
+
+    func OperatorPrecedence(op: BinaryOperator) -> UInt {
+        switch op {
+        case .Add, .Subtract:
+            return 45
+        case .Multiply, .Divide, .Remainder:
+            return 50
+        }
+    }
+
+    mutating func ParseExpression(minPrecedence: UInt) -> AstExpression {
+        print("(ParseExpresion): Current TokenType \(currentToken!)")
+        var left = ParseFactor(minPrecedence: minPrecedence)
+        print("(LeftValue): \(left)")
+        //let value = try? tokenizer.next()
+
+        print(
+            "(ParseExpression: Current TokenType \(currentToken!) with a minPrecedence of \(minPrecedence)"
+        )
+        while IsBinaryOperator() && OperatorPrecedence() >= minPrecedence {
+            let binOp = ParseBinaryOperator()
+            print("(BinaryOperator): \(binOp)")
+            Advance()
+            let right = ParseExpression(minPrecedence: OperatorPrecedence(op: binOp) + 1)
+            left = AstExpression.Binary(binaryOperator: binOp, left: left, right: right)
+        }
+
+        return left
+
+        fatalError("ERROR: Expected Numeric value but got \(currentToken!.tokenType)")
     }
 }
