@@ -136,6 +136,8 @@ struct TackyGenerator {
             instructions.append(
                 AstTackyInstruction.Unary(unaryOperator: tackyOp, dest: dst, src: src))
             return dst
+        case .Binary(let op, let left, let right):
+            fatalError("TODO: Handle binary operators in tacky!")
         }
     }
 }
