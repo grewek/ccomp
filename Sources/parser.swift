@@ -99,7 +99,6 @@ struct Parser {
 
         //TODO: Handle the actual error !
         currentToken = try? self.tokenizer.next()
-        print("Parser Initialized the current token is now \(currentToken!)")
     }
 
     mutating func Advance() {
@@ -206,7 +205,6 @@ struct Parser {
             Advance()
             let innerExpression = ParseExpression(minPrecedence: 0)
             _ = Expect(tokenOfType: TokenType.ClosedParen)
-            print("Finished Term Next Symbol is \(currentToken!)")
             return innerExpression
 
         }
@@ -246,17 +244,10 @@ struct Parser {
     }
 
     mutating func ParseExpression(minPrecedence: UInt) -> AstExpression {
-        print("(ParseExpresion): Current TokenType \(currentToken!)")
         var left = ParseFactor(minPrecedence: minPrecedence)
-        print("(LeftValue): \(left)")
-        //let value = try? tokenizer.next()
 
-        print(
-            "(ParseExpression: Current TokenType \(currentToken!) with a minPrecedence of \(minPrecedence)"
-        )
         while IsBinaryOperator() && OperatorPrecedence() >= minPrecedence {
             let binOp = ParseBinaryOperator()
-            print("(BinaryOperator): \(binOp)")
             Advance()
             let right = ParseExpression(minPrecedence: OperatorPrecedence(op: binOp) + 1)
             left = AstExpression.Binary(binaryOperator: binOp, left: left, right: right)
