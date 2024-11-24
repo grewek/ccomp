@@ -29,6 +29,9 @@ enum AstTackyFunction {
 enum AstTackyInstruction {
     case Return(value: AstTackyValue)
     case Unary(unaryOperator: AstTackyUnaryOperator, dest: AstTackyValue, src: AstTackyValue)
+    case Binary(
+        binaryOperator: AstTackyBinaryOperator, opA: AstTackyValue, opB: AstTackyValue,
+        dest: AstTackyValue)
 
     func Display() -> String {
         switch self {
@@ -36,7 +39,10 @@ enum AstTackyInstruction {
             return "return \(value)"
         case .Unary(let unaryOperator, let dest, let src):
             return "\(dest.Display()) = \(unaryOperator.Display()) \(src.Display())"
+        case .Binary(let op, let operandA, let operandB, let dest):
+            return "\(dest.Display()) = \(operandA.Display()) \(op.Display()) \(operandB.Display())"
         }
+
     }
 }
 
@@ -50,6 +56,29 @@ enum AstTackyValue {
             return "\(value)"
         case .Var(let identifier):
             return "\(identifier)"
+        }
+    }
+}
+
+enum AstTackyBinaryOperator {
+    case Add
+    case Subtract
+    case Multiply
+    case Divide
+    case Remainder
+
+    func Display() -> String {
+        switch self {
+        case .Add:
+            return "+"
+        case .Subtract:
+            return "-"
+        case .Multiply:
+            return "*"
+        case .Divide:
+            return "/"
+        case .Remainder:
+            return "%"
         }
     }
 }
@@ -109,6 +138,21 @@ struct TackyGenerator {
         }
     }
 
+    func ConvertBinaryOperator(op: BinaryOperator) -> AstTackyBinaryOperator {
+        switch op {
+        case .Add:
+            return AstTackyBinaryOperator.Add
+        case .Subtract:
+            return AstTackyBinaryOperator.Subtract
+        case .Multiply:
+            return AstTackyBinaryOperator.Multiply
+        case .Divide:
+            return AstTackyBinaryOperator.Divide
+        case .Remainder:
+            return AstTackyBinaryOperator.Remainder
+        }
+    }
+
     mutating func EmitTackyInstruction(
         statement: AstStatement, instructions: inout [AstTackyInstruction]
     ) -> AstTackyInstruction {
@@ -137,7 +181,14 @@ struct TackyGenerator {
                 AstTackyInstruction.Unary(unaryOperator: tackyOp, dest: dst, src: src))
             return dst
         case .Binary(let op, let left, let right):
-            fatalError("TODO: Handle binary operators in tacky!")
+            let v1 = EmitTackyExpression(expr: left, instructions: &instructions)
+            let v2 = EmitTackyExpression(expr: right, instructions: &instructions)
+            let destName = MakeTemporary()
+            let dst = AstTackyValue.Var(identifier: destName)
+            let binaryOp = ConvertBinaryOperator(op: op)
+            instructions.append(
+                AstTackyInstruction.Binary(binaryOperator: binaryOp, opA: v1, opB: v2, dest: dst))
+            return dst
         }
     }
 }
