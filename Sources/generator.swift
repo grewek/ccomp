@@ -246,6 +246,8 @@ struct Generator {
                 result.append(
                     AssemblyInstruction.Unary(operator: convertedOperator, operand: destOperand))
                 break
+            case .Binary(binaryOperator: _, opA: _, opB: _, dest: _):
+                fatalError("TODO: Emit Assembly Instructions")
             }
         }
 
