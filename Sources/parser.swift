@@ -254,7 +254,5 @@ struct Parser {
         }
 
         return left
-
-        fatalError("ERROR: Expected Numeric value but got \(currentToken!.tokenType)")
     }
 }
