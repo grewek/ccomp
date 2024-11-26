@@ -30,6 +30,9 @@ enum AssemblyInstruction {
     case Move(dest: AssemblyOperand, src: AssemblyOperand)
     //TODO: case AllocateStack(value: Int)
     case Unary(operator: AssemblyUnaryOperator, operand: AssemblyOperand)
+    case Binary(binOp: AssemblyBinaryOperator, dest: AssemblyOperand, src: AssemblyOperand)
+    case Idiv(op: AssemblyOperand)
+    case Cdq
     case AllocateStack(size: Int)
     case Ret
 
@@ -40,10 +43,33 @@ enum AssemblyInstruction {
             return "\tMove(\(dest.Display()), \(src.Display()))\n"
         case .Unary(let op, let operand):
             return "\tUnary(\(op.Display()),\(operand.Display()))\n"
+        case .Binary(let binOp, let dest, let src):
+            return "\tBinary(\(binOp.Display()), \(dest.Display()), \(src.Display()))\n"
+        case .Idiv(let op):
+            return "\tidiv(\(op.Display()))\n"
+        case .Cdq:
+            return "\tcdq\n"
         case .AllocateStack(let size):
             return "\tStackSize(\(size))\n"
         case .Ret:
             return "\tReturn\n"
+        }
+    }
+}
+
+enum AssemblyBinaryOperator {
+    case Add
+    case Sub
+    case Mult
+
+    func Display() -> String {
+        switch self {
+        case .Add:
+            return "add"
+        case .Sub:
+            return "sub"
+        case .Mult:
+            return "imul"
         }
     }
 }
@@ -83,14 +109,20 @@ enum AssemblyOperand {
 
 enum AssemblyRegister {
     case Ax
+    case Dx
     case R10
+    case R11
 
     func Display() -> String {
         switch self {
         case .Ax:
             return "eax"
+        case .Dx:
+            return "edx"
         case .R10:
             return "r10d"
+        case .R11:
+            return "r11d"
         }
     }
 }
@@ -246,9 +278,49 @@ struct Generator {
                 result.append(
                     AssemblyInstruction.Unary(operator: convertedOperator, operand: destOperand))
                 break
-            case .Binary(binaryOperator: _, opA: _, opB: _, dest: _):
-                fatalError("TODO: Emit Assembly Instructions")
+            case .Binary(binaryOperator: AstTackyBinaryOperator.Divide, let opA, let opB, let dest):
+                //TODO: Handle me!
+                let quotient = GenerateAssemblyOperand(operand: opA)
+                let dividend = GenerateAssemblyOperand(operand: opB)
+                let dest = GenerateAssemblyOperand(operand: dest)
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: AssemblyOperand.Register(register: AssemblyRegister.Ax),
+                        src: quotient))
+                result.append(AssemblyInstruction.Cdq)
+                result.append(AssemblyInstruction.Idiv(op: dividend))
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: dest,
+                        src: AssemblyOperand.Register(register: AssemblyRegister.Ax)))
+                break
+            case .Binary(
+                binaryOperator: AstTackyBinaryOperator.Remainder, let opA, let opB, let dest):
+                let quotient = GenerateAssemblyOperand(operand: opA)
+                let dividend = GenerateAssemblyOperand(operand: opB)
+                let dest = GenerateAssemblyOperand(operand: dest)
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: AssemblyOperand.Register(register: AssemblyRegister.Ax),
+                        src: quotient))
+                result.append(AssemblyInstruction.Cdq)
+                result.append(AssemblyInstruction.Idiv(op: dividend))
+                result.append(
+                    AssemblyInstruction.Move(
+                        dest: dest,
+                        src: AssemblyOperand.Register(register: AssemblyRegister.Dx)))
+                break
+            case .Binary(let op, let argA, let argB, let dest):
+                let op = GenerateAssemblyBinaryOperator(operand: op)
+                let argA = GenerateAssemblyOperand(operand: argA)
+                let argB = GenerateAssemblyOperand(operand: argB)
+                let dest = GenerateAssemblyOperand(operand: dest)
+
+                result.append(AssemblyInstruction.Move(dest: dest, src: argA))
+                result.append(AssemblyInstruction.Binary(binOp: op, dest: dest, src: argB))
+                break
             }
+
         }
 
         return result
@@ -269,6 +341,19 @@ struct Generator {
             return .Not
         case .Negate:
             return .Neg
+        }
+    }
+
+    func GenerateAssemblyBinaryOperator(operand: AstTackyBinaryOperator) -> AssemblyBinaryOperator {
+        switch operand {
+        case .Multiply:
+            return .Mult
+        case .Add:
+            return .Add
+        case .Subtract:
+            return .Sub
+        default:
+            fatalError("ERROR: GenerateAssemblyBinaryOperator Cannot handle DIV/REM")
         }
     }
 
