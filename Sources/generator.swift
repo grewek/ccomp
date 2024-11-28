@@ -205,33 +205,58 @@ struct Generator {
         return self.localPseudoRegisters[name]!
     }
 
+    //TODO: Things are getting messy >_< time for a refactor i think...
     mutating func ReplacePseudo(instruction: AssemblyInstruction) -> AssemblyInstruction {
         switch instruction {
         case .Move(
             AssemblyOperand.Pseudo(let pseudoDestName), AssemblyOperand.Pseudo(let pseudoSrcName)):
-            let waterMarkDest = InsertPseudoRegister(name: pseudoDestName)
-            let waterMarkSrc = InsertPseudoRegister(name: pseudoSrcName)
+            let watermarkDest = InsertPseudoRegister(name: pseudoDestName)
+            let watermarkSrc = InsertPseudoRegister(name: pseudoSrcName)
             return AssemblyInstruction.Move(
-                dest: AssemblyOperand.Stack(value: waterMarkDest),
-                src: AssemblyOperand.Stack(value: waterMarkSrc))
+                dest: AssemblyOperand.Stack(value: watermarkDest),
+                src: AssemblyOperand.Stack(value: watermarkSrc))
         case .Move(AssemblyOperand.Pseudo(let pseudoRegName), let src):
-            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            let watermark = InsertPseudoRegister(name: pseudoRegName)
             return AssemblyInstruction.Move(
-                dest: AssemblyOperand.Stack(value: waterMark),
+                dest: AssemblyOperand.Stack(value: watermark),
                 src: src)
         case .Move(let dest, AssemblyOperand.Pseudo(let pseudoRegName)):
-            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            let watermark = InsertPseudoRegister(name: pseudoRegName)
             return AssemblyInstruction.Move(
                 dest: dest,
-                src: AssemblyOperand.Stack(value: waterMark))
+                src: AssemblyOperand.Stack(value: watermark))
         case .AllocateStack(_):
             fatalError(
                 "ERROR: AllocateStack is not possible yet as we don't know the absolute stack size yet!"
             )
         case .Unary(operator: let op, operand: AssemblyOperand.Pseudo(let pseudoRegName)):
-            let waterMark = InsertPseudoRegister(name: pseudoRegName)
+            let watermark = InsertPseudoRegister(name: pseudoRegName)
             return AssemblyInstruction.Unary(
-                operator: op, operand: AssemblyOperand.Stack(value: waterMark))
+                operator: op, operand: AssemblyOperand.Stack(value: watermark))
+        case .Binary(
+            binOp: let op, dest: AssemblyOperand.Pseudo(let psuedoDest),
+            src: AssemblyOperand.Pseudo(let psuedoSrc)):
+            let watermarkDest = InsertPseudoRegister(name: psuedoDest)
+            let watermarkSrc = InsertPseudoRegister(name: psuedoSrc)
+            return AssemblyInstruction.Binary(
+                binOp: op, dest: AssemblyOperand.Stack(value: watermarkDest),
+                src: AssemblyOperand.Stack(value: watermarkSrc))
+        case .Binary(binOp: let op, dest: AssemblyOperand.Pseudo(let psuedoDest), let src):
+            let watermark = InsertPseudoRegister(name: psuedoDest)
+            return AssemblyInstruction.Binary(
+                binOp: op,
+                dest: AssemblyOperand.Stack(value: watermark),
+                src: src)
+        case .Binary(binOp: let op, let dest, src: AssemblyOperand.Pseudo(let psuedoSrc)):
+            let watermark = InsertPseudoRegister(name: psuedoSrc)
+            return AssemblyInstruction.Binary(
+                binOp: op,
+                dest: dest,
+                src: AssemblyOperand.Stack(value: watermark))
+        case .Idiv(op: AssemblyOperand.Pseudo(let registerName)):
+            let watermark = InsertPseudoRegister(name: registerName)
+            return AssemblyInstruction.Idiv(op: AssemblyOperand.Stack(value: watermark))
+
         default:
             break
         }
