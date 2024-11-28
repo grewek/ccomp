@@ -72,6 +72,10 @@ struct Emitter {
             return "eax"
         case .R10:
             return "r10d"
+        case .Dx:
+            fatalError("TODO")
+        case .R11:
+            fatalError("TODO")
         }
     }
 
@@ -110,6 +114,12 @@ struct Emitter {
             //TODO: Fill this out!
             output += EmitUnaryOperation(op: op, operand: dest)
             break
+        case .Binary(let _, let _, let _):
+            fatalError("TODO")
+        case .Idiv(op: _):
+            fatalError("TODO")
+        case .Cdq:
+            fatalError("TODO")
         case .AllocateStack(let size):
             //TODO: Fill this out!
             output += EmitStackFrameSize(size: size)
