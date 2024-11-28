@@ -61,6 +61,17 @@ if CommandLine.arguments.count == 3 {
         var codeGenerator = Generator(ast: tackyResult)
 
         print(codeGenerator.GenerateAssembly().Display())
+    } else if CommandLine.arguments[1] == "--emit" {
+        let filepath = CommandLine.arguments[2]
+        let source = try String(contentsOfFile: filepath, encoding: String.Encoding.ascii)
+
+        var parser = Parser(tokenizer: Lexer(source: source, currentPosition: 0))
+        let result = parser.ParseProgram()
+        var tacky = TackyGenerator(ast: result)
+        let tackyResult = tacky.EmitTackyProgram(programDefinition: result)
+        var codeGenerator = Generator(ast: tackyResult)
+
+        print(codeGenerator.GenerateAssembly().Display())
         var myTestEmitter = Emitter(assembly: codeGenerator.GenerateAssembly(), path: "./test.txt")
         myTestEmitter.EmitProgram()
     } else {
