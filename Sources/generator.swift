@@ -171,6 +171,31 @@ struct Generator {
                         let generatedInstructions = RewriteIllegalStackInstruction(
                             srcValue: src, destValue: dest)
                         result.append(contentsOf: generatedInstructions)
+                    case .Idiv(let assemblyOperand):
+                        let generatedInstructions = RewriteIllegalIdivInstruction(
+                            immediateValue: assemblyOperand)
+                        result.append(contentsOf: generatedInstructions)
+                    case .Binary(
+                        binOp: AssemblyBinaryOperator.Add,
+                        dest: AssemblyOperand.Stack(value: let stackDest),
+                        src: AssemblyOperand.Stack(value: let stackSrc)):
+                        let generatedInstructions = RewriteIllegalAddSubInstruction(
+                            binOp: AssemblyBinaryOperator.Add,
+                            dest: stackDest, src: stackSrc)
+                        result.append(contentsOf: generatedInstructions)
+                    case .Binary(
+                        binOp: AssemblyBinaryOperator.Sub,
+                        dest: AssemblyOperand.Stack(value: let stackDest),
+                        src: AssemblyOperand.Stack(value: let stackSrc)):
+                        let generatedInstruction = RewriteIllegalAddSubInstruction(
+                            binOp: AssemblyBinaryOperator.Sub, dest: stackDest, src: stackSrc)
+                        result.append(contentsOf: generatedInstruction)
+                    case .Binary(
+                        binOp: AssemblyBinaryOperator.Mult,
+                        dest: AssemblyOperand.Stack(value: let stackDest), let src):
+                        let generatedInstruction = RewriteIllegalMultInstruction(
+                            dest: stackDest, src: src)
+                        result.append(contentsOf: generatedInstruction)
                     default:
                         result.append(generatedInstruction)
                     }
@@ -191,6 +216,42 @@ struct Generator {
             AssemblyInstruction.Move(
                 dest: AssemblyOperand.Stack(value: destValue),
                 src: AssemblyOperand.Register(register: AssemblyRegister.R10)),
+        ]
+    }
+
+    func RewriteIllegalIdivInstruction(immediateValue: AssemblyOperand) -> [AssemblyInstruction] {
+        [
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R10), src: immediateValue),
+            AssemblyInstruction.Idiv(op: AssemblyOperand.Register(register: AssemblyRegister.R10)),
+        ]
+    }
+
+    func RewriteIllegalAddSubInstruction(binOp: AssemblyBinaryOperator, dest: Int, src: Int)
+        -> [AssemblyInstruction]
+    {
+        [
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R10),
+                src: AssemblyOperand.Stack(value: src)),
+            AssemblyInstruction.Binary(
+                binOp: binOp, dest: AssemblyOperand.Stack(value: dest),
+                src: AssemblyOperand.Register(register: AssemblyRegister.R10)),
+        ]
+    }
+
+    func RewriteIllegalMultInstruction(dest: Int, src: AssemblyOperand) -> [AssemblyInstruction] {
+        [
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R11),
+                src: AssemblyOperand.Stack(value: dest)),
+            AssemblyInstruction.Binary(
+                binOp: AssemblyBinaryOperator.Mult,
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R11),
+                src: src),
+            AssemblyInstruction.Move(
+                dest: AssemblyOperand.Register(register: AssemblyRegister.R11),
+                src: AssemblyOperand.Stack(value: dest)),
         ]
     }
 
