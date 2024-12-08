@@ -73,9 +73,9 @@ struct Emitter {
         case .R10:
             return "r10d"
         case .Dx:
-            fatalError("TODO")
+            return "edx"
         case .R11:
-            fatalError("TODO")
+            return "r11d"
         }
     }
 
@@ -85,6 +85,19 @@ struct Emitter {
             return "\tneg \(EmitOperand(operand: operand))\n"
         case .Not:
             return "\tnot \(EmitOperand(operand: operand))\n"
+        }
+    }
+
+    func EmitBinaryOperation(
+        op: AssemblyBinaryOperator, dest: AssemblyOperand, src: AssemblyOperand
+    ) -> String {
+        switch op {
+        case .Add:
+            return "\tadd \(EmitOperand(operand: dest)), \(EmitOperand(operand: src))\n"
+        case .Sub:
+            return "\tsub \(EmitOperand(operand: dest)), \(EmitOperand(operand: src))\n"
+        case .Mult:
+            return "\timul \(EmitOperand(operand: dest)), \(EmitOperand(operand: src))\n"
         }
     }
 
@@ -114,12 +127,15 @@ struct Emitter {
             //TODO: Fill this out!
             output += EmitUnaryOperation(op: op, operand: dest)
             break
-        case .Binary(let _, let _, let _):
-            fatalError("TODO")
-        case .Idiv(op: _):
-            fatalError("TODO")
+        case .Binary(let operation, let dest, let src):
+            let binaryInstruction = EmitBinaryOperation(op: operation, dest: dest, src: src)
+            output += binaryInstruction
+        case .Idiv(op: let arg):
+            let divInstruction = "\tidiv \(EmitOperand(operand: arg))\n"
+            output += divInstruction
         case .Cdq:
-            fatalError("TODO")
+            let cdqInstruction = "\tcdq\n"
+            output += cdqInstruction
         case .AllocateStack(let size):
             //TODO: Fill this out!
             output += EmitStackFrameSize(size: size)
