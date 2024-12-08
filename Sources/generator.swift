@@ -382,6 +382,7 @@ struct Generator {
                 break
             case .Binary(
                 binaryOperator: AstTackyBinaryOperator.Remainder, let opA, let opB, let dest):
+                //TODO: The code is confusing dest with src this needs to be fixed next!
                 let quotient = GenerateAssemblyOperand(operand: opA)
                 let dividend = GenerateAssemblyOperand(operand: opB)
                 let dest = GenerateAssemblyOperand(operand: dest)
