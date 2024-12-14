@@ -149,7 +149,8 @@ struct Generator {
         //need to generate a positive value in the emitted subtraction
         //if it would be negative at this point the stack would shrink not grow
         //which is definitly not what we want!
-        let stackSize = abs(self.stackWaterMark + 4)
+        let stackWaterMark = abs(self.stackWaterMark)
+        let stackSize = (stackWaterMark + 4) + ((stackWaterMark + 4) % 16)
         return stackSize
     }
     mutating func ReplaceInstructionsWithPseudoValues(repr: inout AssemblyProgram)
@@ -250,8 +251,8 @@ struct Generator {
                 dest: AssemblyOperand.Register(register: AssemblyRegister.R11),
                 src: src),
             AssemblyInstruction.Move(
-                dest: AssemblyOperand.Register(register: AssemblyRegister.R11),
-                src: AssemblyOperand.Stack(value: dest)),
+                dest: AssemblyOperand.Stack(value: dest),
+                src: AssemblyOperand.Register(register: AssemblyRegister.R11)),
         ]
     }
 
