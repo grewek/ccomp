@@ -39,7 +39,7 @@ struct Emitter {
     }
 
     func EmitStackFrameExit() -> String {
-        let frameExit = "\tmov rbp, rsp\n\tpop rbp\n"
+        let frameExit = "\tmov rsp, rbp\n\tpop rbp\n"
         return frameExit
     }
 
